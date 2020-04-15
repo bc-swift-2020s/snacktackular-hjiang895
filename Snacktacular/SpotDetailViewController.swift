@@ -19,6 +19,8 @@ class SpotDetailViewController: UIViewController {
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var cancelBarButton: UIBarButtonItem!
+    @IBOutlet weak var saveBarButton: UIBarButtonItem!
     
     var spot: Spot!
     let regionDistance: CLLocationDistance = 750 //750 meters or about a half mile
@@ -27,17 +29,40 @@ class SpotDetailViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        //hide keyboard if we tap outside of a field
+        let tap = UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing(_:)))
+        tap.cancelsTouchesInView = false
+        self.view.addGestureRecognizer(tap)
         //mapView.delegate = self
         
-        if spot == nil {
+        if spot == nil { //We are adding a new record, fields should be editable
+            
             spot = Spot() //will declare a spot with all empty values in there
             getLocation()
+            nameField.addBorder(width: 0.5, radius: 5.0, color: .black)
+            addressField.addBorder(width: 0.5, radius: 5.0, color: .black)
+        } else {//viewing an existing spot, so editing should be disabled
+            nameField.isEnabled = false
+            addressField.isEnabled = false
+            nameField.backgroundColor = UIColor.clear
+            addressField.backgroundColor = UIColor.clear
+            saveBarButton.title = ""
+            cancelBarButton.title = ""
+            navigationController?.setToolbarHidden(true, animated: true)
         }
         //code to create a region centered at spot's .coordinate and zoomed in with map spanning roughly
         //750 m x 750 m
         let region = MKCoordinateRegion(center: spot.coordinate, latitudinalMeters: regionDistance, longitudinalMeters: regionDistance)
         mapView.setRegion(region, animated: true)
+        updateUserInterface()
+    }
+    @IBAction func textFieldEditingChanged(_ sender: UITextField) {
+        saveBarButton.isEnabled = !(nameField.text == "")
+    }
+    @IBAction func textFieldReturnPressed(_ sender: UITextField) {
+        sender.resignFirstResponder()
+        spot.name = nameField.text!
+        spot.address = addressField.text!
         updateUserInterface()
     }
     
@@ -74,6 +99,7 @@ class SpotDetailViewController: UIViewController {
     }
     
     @IBAction func reviewButtonPressed(_ sender: UIButton) {
+        performSegue(withIdentifier: "AddReview", sender: nil)
     }
     
     @IBAction func saveButtonPressed(_ sender: UIBarButtonItem) {
